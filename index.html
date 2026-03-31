@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Collector AI">
+<meta name="description" content="AI-powered collector analyzer for vinyl records and trading cards">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<title>Collector AI</title>
+<style>
+:root {
+  --bg: #0a0a0a;
+  --bg2: #141414;
+  --bg3: #1c1c1c;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.15);
+  --text: #f0f0f0;
+  --text2: #888;
+  --text3: #555;
+  --accent: #e8ff47;
+  --accent-dim: rgba(232,255,71,0.12);
+  --green: #4ade80;
+  --green-dim: rgba(74,222,128,0.12);
+  --red: #f87171;
+  --red-dim: rgba(248,113,113,0.12);
+  --amber: #fbbf24;
+  --amber-dim: rgba(251,191,36,0.12);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { background: var(--bg); }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  overflow-x: hidden;
+}
+.safe-area { padding-top: env(safe-area-inset-top); }
+
+/* NAV */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,10,10,0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 0.5px solid var(--border);
+  padding: 14px 20px;
+  display: flex; align-items: center; gap: 10px;
+}
+.nav-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: var(--accent); display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+nav h1 { font-size: 17px; font-weight: 500; letter-spacing: -0.3px; }
+nav span { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; margin-left: auto; }
+
+/* MAIN */
+main { padding: 20px 16px 100px; max-width: 480px; margin: 0 auto; }
+
+/* UPLOAD */
+.upload-card {
+  border: 1.5px dashed var(--border2);
+  border-radius: var(--radius);
+  padding: 32px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg2);
+  position: relative; overflow: hidden;
+}
+.upload-card:active { transform: scale(0.98); }
+.upload-card.has-image { border-style: solid; border-color: var(--border2); padding: 0; }
+.upload-card.drag { border-color: var(--accent); background: var(--accent-dim); }
+.upload-placeholder { pointer-events: none; }
+.upload-placeholder .icon { font-size: 36px; margin-bottom: 12px; }
+.upload-placeholder h2 { font-size: 16px; font-weight: 500; margin-bottom: 6px; }
+.upload-placeholder p { font-size: 13px; color: var(--text2); line-height: 1.5; }
+.preview-img {
+  width: 100%; max-height: 300px; object-fit: contain;
+  border-radius: var(--radius); display: block;
+}
+.change-photo-btn {
+  position: absolute; bottom: 10px; right: 10px;
+  background: rgba(0,0,0,0.7); border: 0.5px solid var(--border2);
+  color: var(--text); font-size: 12px; padding: 6px 12px;
+  border-radius: 20px; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  backdrop-filter: blur(10px);
+}
+
+/* MODE SELECT */
+.section-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; font-family: 'DM Mono', monospace; margin: 20px 0 10px; }
+.mode-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.mode-btn {
+  background: var(--bg2); border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 14px;
+  cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: center; gap: 10px;
+  font-family: 'DM Sans', sans-serif;
+}
+.mode-btn:active { transform: scale(0.97); }
+.mode-btn.active { border-color: var(--accent); background: var(--accent-dim); }
+.mode-btn .mode-icon { font-size: 20px; }
+.mode-btn .mode-text { font-size: 13px; font-weight: 500; color: var(--text); }
+.mode-btn .mode-sub { font-size: 11px; color: var(--text2); }
+
+/* ANALYZE BTN */
+.analyze-btn {
+  width: 100%; margin-top: 20px; padding: 16px;
+  background: var(--accent); color: #0a0a0a;
+  border: none; border-radius: var(--radius);
+  font-size: 16px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s; letter-spacing: -0.2px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.analyze-btn:active { transform: scale(0.98); }
+.analyze-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+/* LOADING */
+.loading {
+  display: none; text-align: center; padding: 40px 0;
+}
+.spinner {
+  width: 36px; height: 36px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading p { font-size: 14px; color: var(--text2); }
+.loading .dots::after {
+  content: '';
+  animation: dots 1.5s steps(4, end) infinite;
+}
+@keyframes dots {
+  0%, 20% { content: ''; }
+  40% { content: '.'; }
+  60% { content: '..'; }
+  80%, 100% { content: '...'; }
+}
+
+/* RESULT */
+.result { display: none; margin-top: 20px; }
+.result-hero {
+  background: var(--bg2); border: 0.5px solid var(--border);
+  border-radius: var(--radius); padding: 20px; margin-bottom: 10px;
+}
+.result-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+.result-name { font-size: 17px; font-weight: 500; letter-spacing: -0.3px; line-height: 1.3; flex: 1; margin-right: 12px; }
+.result-edition { font-size: 12px; color: var(--text2); margin-top: 3px; }
+.verdict {
+  padding: 6px 14px; border-radius: 20px;
+  font-size: 12px; font-weight: 500; white-space: nowrap;
+  font-family: 'DM Mono', monospace;
+}
+.verdict.buy { background: var(--green-dim); color: var(--green); }
+.verdict.pass { background: var(--red-dim); color: var(--red); }
+.verdict.negotiate { background: var(--amber-dim); color: var(--amber); }
+
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat {
+  background: var(--bg3); border-radius: var(--radius-sm);
+  padding: 12px 10px;
+}
+.stat-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; font-family: 'DM Mono', monospace; margin-bottom: 6px; }
+.stat-val { font-size: 17px; font-weight: 500; color: var(--text); font-family: 'DM Mono', monospace; }
+.stat-sub { font-size: 10px; color: var(--text2); margin-top: 3px; line-height: 1.3; }
+
+.analysis-card {
+  background: var(--bg2); border: 0.5px solid var(--border);
+  border-radius: var(--radius); padding: 16px; margin-bottom: 10px;
+}
+.analysis-card p { font-size: 14px; color: var(--text2); line-height: 1.65; }
+
+.action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.action-btn {
+  padding: 14px; border-radius: var(--radius-sm);
+  font-size: 14px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; border: none;
+  transition: all 0.15s;
+}
+.action-btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--accent); color: #0a0a0a; }
+.btn-secondary { background: var(--bg2); color: var(--text); border: 0.5px solid var(--border2); }
+
+/* ERROR */
+.error-msg {
+  display: none; background: var(--red-dim); border: 0.5px solid var(--red);
+  border-radius: var(--radius-sm); padding: 12px 14px;
+  font-size: 13px; color: var(--red); margin-top: 12px; line-height: 1.5;
+}
+
+/* INSTALL BANNER */
+.install-banner {
+  display: none; position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--bg2); border-top: 0.5px solid var(--border2);
+  padding: 16px 20px; padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  z-index: 200;
+}
+.install-banner p { font-size: 13px; color: var(--text2); margin-bottom: 10px; }
+.install-banner strong { color: var(--text); }
+.install-row { display: flex; gap: 8px; }
+.install-btn {
+  flex: 1; padding: 12px; border-radius: var(--radius-sm);
+  font-size: 14px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; border: none;
+}
+.install-btn.primary { background: var(--accent); color: #0a0a0a; }
+.install-btn.secondary { background: transparent; color: var(--text2); border: 0.5px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="safe-area"></div>
+<nav>
+  <div class="nav-icon">⬡</div>
+  <h1>Collector AI</h1>
+  <span>v1.0</span>
+</nav>
+
+<main>
+  <div class="upload-card" id="uploadCard" onclick="triggerUpload()">
+    <div class="upload-placeholder" id="uploadPlaceholder">
+      <div class="icon">📷</div>
+      <h2>Upload a listing photo</h2>
+      <p>Vinyl records, Pokémon cards,<br>football cards — any marketplace</p>
+    </div>
+    <img class="preview-img" id="previewImg" style="display:none" alt="">
+    <button class="change-photo-btn" id="changeBtn" style="display:none" onclick="e => { e.stopPropagation(); triggerUpload(); }">Change photo</button>
+  </div>
+  <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none">
+
+  <div class="section-label">Category</div>
+  <div class="mode-grid">
+    <div class="mode-btn active" data-mode="auto" onclick="setMode(this)">
+      <span class="mode-icon">🔍</span>
+      <div><div class="mode-text">Auto-detect</div><div class="mode-sub">Let AI decide</div></div>
+    </div>
+    <div class="mode-btn" data-mode="vinyl" onclick="setMode(this)">
+      <span class="mode-icon">💿</span>
+      <div><div class="mode-text">Vinyl record</div><div class="mode-sub">LP / pressing</div></div>
+    </div>
+    <div class="mode-btn" data-mode="pokemon" onclick="setMode(this)">
+      <span class="mode-icon">⚡</span>
+      <div><div class="mode-text">Pokémon card</div><div class="mode-sub">TCG / graded</div></div>
+    </div>
+    <div class="mode-btn" data-mode="football" onclick="setMode(this)">
+      <span class="mode-icon">⚽</span>
+      <div><div class="mode-text">Football card</div><div class="mode-sub">Panini / Topps</div></div>
+    </div>
+  </div>
+
+  <button class="analyze-btn" id="analyzeBtn" disabled onclick="analyze()">
+    Analyze listing ↗
+  </button>
+  <div class="error-msg" id="errorMsg"></div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p id="loadingText">Analyzing<span class="dots"></span></p>
+  </div>
+
+  <div class="result" id="result">
+    <div class="result-hero">
+      <div class="result-top">
+        <div>
+          <div class="result-name" id="rName">—</div>
+          <div class="result-edition" id="rEdition">—</div>
+        </div>
+        <div class="verdict" id="rVerdict">—</div>
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Market</div>
+          <div class="stat-val" id="rMarket">—</div>
+          <div class="stat-sub">estimated value</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Grade</div>
+          <div class="stat-val" id="rGrade">—</div>
+          <div class="stat-sub" id="rGradeSub">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Offer</div>
+          <div class="stat-val" id="rOffer">—</div>
+          <div class="stat-sub">fair price</div>
+        </div>
+      </div>
+    </div>
+    <div class="analysis-card">
+      <p id="rAnalysis">—</p>
+    </div>
+    <div class="action-row">
+      <button class="action-btn btn-primary" onclick="reset()">New analysis</button>
+      <button class="action-btn btn-secondary" onclick="share()">Share result</button>
+    </div>
+  </div>
+</main>
+
+<div class="install-banner" id="installBanner">
+  <p><strong>Install Collector AI</strong> — add to home screen for quick access</p>
+  <div class="install-row">
+    <button class="install-btn primary" id="installBtn">Install app</button>
+    <button class="install-btn secondary" onclick="document.getElementById('installBanner').style.display='none'">Not now</button>
+  </div>
+</div>
+
+<script>
+let selectedMode = 'auto';
+let base64Image = null;
+let deferredPrompt = null;
+let lastResult = null;
+
+const loadingMsgs = ['Identifying item', 'Checking market prices', 'Assessing condition', 'Building verdict'];
+let loadIdx = 0, loadInterval;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (!localStorage.getItem('pwa-dismissed')) {
+    setTimeout(() => { document.getElementById('installBanner').style.display = 'block'; }, 2000);
+  }
+});
+
+document.getElementById('installBtn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('installBanner').style.display = 'none';
+  if (outcome === 'dismissed') localStorage.setItem('pwa-dismissed', '1');
+});
+
+function triggerUpload() { document.getElementById('fileInput').click(); }
+
+document.getElementById('fileInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    base64Image = ev.target.result.split(',')[1];
+    const img = document.getElementById('previewImg');
+    img.src = ev.target.result;
+    img.style.display = 'block';
+    document.getElementById('uploadPlaceholder').style.display = 'none';
+    document.getElementById('changeBtn').style.display = 'block';
+    document.getElementById('uploadCard').classList.add('has-image');
+    document.getElementById('analyzeBtn').disabled = false;
+    document.getElementById('result').style.display = 'none';
+    document.getElementById('errorMsg').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+});
+
+function setMode(el) {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  selectedMode = el.dataset.mode;
+}
+
+async function analyze() {
+  if (!base64Image) return;
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('errorMsg').style.display = 'none';
+
+  loadIdx = 0;
+  loadInterval = setInterval(() => {
+    document.getElementById('loadingText').innerHTML = loadingMsgs[loadIdx++ % loadingMsgs.length] + '<span class="dots"></span>';
+  }, 1800);
+
+  const hints = { auto: '', vinyl: 'This is a vinyl record.', pokemon: 'This is a Pokémon trading card.', football: 'This is a football/soccer trading card.' };
+  const prompt = `You are an expert collector and appraiser. Analyze this second-hand marketplace listing image. ${hints[selectedMode]}
+
+Respond ONLY with valid JSON (no markdown, no backticks):
+{"title":"specific item name","subtitle":"year/edition/set","verdict":"BUY|PASS|NEGOTIATE","market_value":"€XX–XX","condition_grade":"NM/VG+/VG/LP or PSA X estimate","condition_note":"brief reason","fair_offer":"€XX","analysis":"2-3 sentences about what it is, verdict reasoning, key factors"}
+
+Use Euro prices. Be specific and realistic.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 800,
+        messages: [{ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64Image } },
+          { type: 'text', text: prompt }
+        ]}]
+      })
+    });
+
+    clearInterval(loadInterval);
+    const data = await res.json();
+    const text = data.content[0].text.trim();
+    let r;
+    try { r = JSON.parse(text); } catch { r = JSON.parse(text.match(/\{[\s\S]*\}/)[0]); }
+
+    lastResult = r;
+    document.getElementById('rName').textContent = r.title || '—';
+    document.getElementById('rEdition').textContent = r.subtitle || '—';
+    document.getElementById('rMarket').textContent = r.market_value || '—';
+    document.getElementById('rGrade').textContent = r.condition_grade || '—';
+    document.getElementById('rGradeSub').textContent = r.condition_note || '—';
+    document.getElementById('rOffer').textContent = r.fair_offer || '—';
+    document.getElementById('rAnalysis').textContent = r.analysis || '—';
+
+    const vEl = document.getElementById('rVerdict');
+    const v = (r.verdict || '').toUpperCase();
+    vEl.textContent = v === 'BUY' ? 'BUY ✓' : v === 'PASS' ? 'PASS ✗' : 'NEGOTIATE';
+    vEl.className = 'verdict ' + (v === 'BUY' ? 'buy' : v === 'PASS' ? 'pass' : 'negotiate');
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('result').style.display = 'block';
+    document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (err) {
+    clearInterval(loadInterval);
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('errorMsg').textContent = 'Analysis failed. Check your connection and try again.';
+    document.getElementById('errorMsg').style.display = 'block';
+    document.getElementById('analyzeBtn').disabled = false;
+  }
+}
+
+function reset() {
+  base64Image = null;
+  document.getElementById('previewImg').style.display = 'none';
+  document.getElementById('uploadPlaceholder').style.display = 'block';
+  document.getElementById('changeBtn').style.display = 'none';
+  document.getElementById('uploadCard').classList.remove('has-image');
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('errorMsg').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function share() {
+  if (!lastResult) return;
+  const text = `Collector AI Analysis\n${lastResult.title}\n${lastResult.subtitle}\n\nVerdict: ${lastResult.verdict}\nMarket value: ${lastResult.market_value}\nFair offer: ${lastResult.fair_offer}\n\n${lastResult.analysis}`;
+  if (navigator.share) {
+    try { await navigator.share({ title: 'Collector AI', text }); } catch {}
+  } else {
+    await navigator.clipboard.writeText(text);
+    alert('Copied to clipboard!');
+  }
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
